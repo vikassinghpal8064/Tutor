@@ -1,11 +1,11 @@
 const express = require("express");
+const multer= require("multer");
 const env = require("dotenv").config();
 //const app= express();
 const router = express.Router();
 const { GoogleGenAI } = require("@google/genai");
-//console.log(process.env.GEMINI_API_KEY);
-//const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const ai = new GoogleGenAI({});
+const ai = new GoogleGenAI({ apiVersion: "v1alpha" });
+
 router.get("/students/:type", async (req, res, next) => {
   try {
     let { type } = req.params;
@@ -23,6 +23,7 @@ router.post("/user/query", async (req, res, next) => {
   console.log(typeof query);
 
   try {
+   
     async function textgeneration() {
         let response=null;
       if (query != null) {
@@ -47,5 +48,48 @@ router.post("/user/query", async (req, res, next) => {
     res.send({ message: "you got the error " + err });
   }
 });
+
+
+let upload= multer({storage:multer.memoryStorage()});
+
+router.post("/user/upload",upload.single("file"),async (req,res,next)=>{
+    try{
+console.log(req.file);
+
+
+  async function solveProblem(){
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash-lite",
+    contents: [
+      {
+        parts: [
+          { text: "can you solve this problem" },
+          {
+            inlineData: {
+              mimeType: req.file.mimetype,
+              data: req.file.buffer.toString("base64"),
+            },
+            mediaResolution: {
+              level: "media_resolution_medium"
+            }
+          }
+        ]
+      }
+    ]
+  });
+
+  console.log(response.text);
+  return response.text;
+}
+
+let result= await solveProblem();
+
+res.send({message:result});
+    }
+    catch(err){
+        res.send({message:`something went wrong while uploading + ${err}`});
+    }
+  
+})
 
 module.exports = router;

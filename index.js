@@ -7,6 +7,7 @@ const env= require('dotenv').config();
 
 const PORT= process.env.PORT || 8080;
 app.use(express.json());// its a middle ware to parse json;
+app.use(express.urlencoded({extended:true})); //its a middle ware for form data
 app.use(user);
 
 
